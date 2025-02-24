@@ -3,12 +3,16 @@ import importlib
 import sys
 from pathlib import Path
 
-# Add the project directory to the sys.path
-sys.path.append(str(Path(__file__).parent))
+# Fix for __file__ not being defined in Streamlit
+data_dir = Path.cwd() / 'data'
+sys.path.append(str(Path.cwd()))  # Add the current working directory
 
 # Import utility modules
-from utils.data_processing import load_data, initialize_session_state
-from utils.visualization import setup_css_styling
+try:
+    from utils.data_processing import load_data, initialize_session_state
+    from utils.visualization import setup_css_styling
+except ModuleNotFoundError as e:
+    st.error(f"Module import error: {e}")
 
 # Page configuration
 st.set_page_config(
@@ -18,36 +22,43 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Apply custom styling
-setup_css_styling()
+# Apply custom styling if available
+try:
+    setup_css_styling()
+except Exception as e:
+    st.warning(f"CSS styling could not be applied: {e}")
 
-# Load initial data
-initialize_session_state()
+# Load initial data safely
+try:
+    initialize_session_state()
+except Exception as e:
+    st.error(f"Data initialization failed: {e}")
 
 # Sidebar navigation
 with st.sidebar:
-    from utils.sidebar import create_sidebar
-    page = create_sidebar()
+    try:
+        from utils.sidebar import create_sidebar
+        page = create_sidebar()
+    except ModuleNotFoundError as e:
+        st.error(f"Sidebar import error: {e}")
+        page = "Dashboard"  # Default fallback page
 
-# Import and render the selected page
-if page == "Dashboard":
-    from pages.dashboard import render_dashboard
-    render_dashboard()
-elif page == "Producers":
-    from pages.producers import render_producers
-    render_producers()
-elif page == "Products":
-    from pages.products import render_products
-    render_products()
-elif page == "Market Analysis":
-    from pages.market_analysis import render_market_analysis
-    render_market_analysis()
-elif page == "Sustainability":
-    from pages.sustainability import render_sustainability
-    render_sustainability()
-elif page == "Community":
-    from pages.community import render_community
-    render_community()
+# Import and render the selected page dynamically
+page_modules = {
+    "Dashboard": "pages.dashboard",
+    "Producers": "pages.producers",
+    "Products": "pages.products",
+    "Market Analysis": "pages.market_analysis",
+    "Sustainability": "pages.sustainability",
+    "Community": "pages.community"
+}
+
+if page in page_modules:
+    try:
+        module = importlib.import_module(page_modules[page])
+        getattr(module, f'render_{page.lower().replace(" ", "_")}')()
+    except (ModuleNotFoundError, AttributeError) as e:
+        st.error(f"Error loading {page} page: {e}")
 
 # Footer
 st.markdown("---")
@@ -60,6 +71,6 @@ st.markdown(
             Data last updated: February 24, 2025
         </p>
     </div>
-    """, 
+    """,
     unsafe_allow_html=True
 )
