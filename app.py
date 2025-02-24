@@ -1,9 +1,19 @@
 import streamlit as st
+
+# Page configuration - MUST be the first Streamlit command
+st.set_page_config(
+    page_title="Farm-to-Table Ecosystem",
+    page_icon="🌱",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Now proceed with other imports
 import importlib
 import sys
 from pathlib import Path
 
-# Fix for __file__ not being defined in Streamlit
+# Fix for **file** not being defined in Streamlit
 data_dir = Path.cwd() / 'data'
 sys.path.append(str(Path.cwd()))  # Add the current working directory
 
@@ -13,14 +23,6 @@ try:
     from utils.visualization import setup_css_styling
 except ModuleNotFoundError as e:
     st.error(f"Module import error: {e}")
-
-# Page configuration
-st.set_page_config(
-    page_title="Farm-to-Table Ecosystem",
-    page_icon="🌱",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Apply custom styling if available
 try:
