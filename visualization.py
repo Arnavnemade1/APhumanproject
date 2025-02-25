@@ -1,267 +1,208 @@
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
-import pandas as pd
-from io import BytesIO
-import base64
+import plotly.express as px
+import plotly.graph_objects as go
 
 def setup_css_styling():
-    """Set up custom CSS styling for the app"""
-    # Color palette
-    colors = {
-        "primary": "#2E7D32",    # Forest Green
-        "secondary": "#1976D2",  # Ocean Blue  
-        "accent": "#FF9800",     # Harvest Orange
-        "background": "#F8F9FA", # Light Cloud
-        "text": "#212121",       # Deep Charcoal
-        "light_text": "#757575", # Smooth Gray
-        "success": "#66BB6A",    # Fresh Mint
-        "warning": "#FFA726",    # Amber Alert
-        "danger": "#EF5350",     # Tomato Red
+    """Apply custom CSS styling to the app"""
+    st.markdown("""
+    <style>
+    /* Main app styling */
+    .main {
+        background-color: #f8f9fa;
     }
     
-    st.markdown(f"""
-    <style>
-        /* Base styling */
-        .main .block-container {{
-            padding-top: 1rem;
-            padding-bottom: 3rem;
-        }}
-        h1, h2, h3, h4, h5, h6 {{
-            color: {colors["primary"]};
-            font-family: 'Helvetica Neue', sans-serif;
-            font-weight: 600;
-        }}
-        p {{
-            font-family: 'Helvetica Neue', sans-serif;
-            color: {colors["text"]};
-        }}
-        
-        /* Cards and containers */
-        .metric-card {{
-            background-color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 10px 0;
-            border-left: 5px solid {colors["primary"]};
-            transition: transform 0.3s ease;
-        }}
-        .metric-card:hover {{
-            transform: translateY(-5px);
-        }}
-        .insights-container {{
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }}
-        
-        /* Tags and status indicators */
-        .local-tag {{
-            color: white;
-            background-color: {colors["primary"]};
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }}
-        .regional-tag {{
-            color: white;
-            background-color: {colors["secondary"]};
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }}
-        .badge {{
-            display: inline-block;
-            padding: 3px 10px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border-radius: 12px;
-            margin-right: 5px;
-        }}
-        .badge-organic {{
-            background-color: #C8E6C9;
-            color: #2E7D32;
-        }}
-        .badge-conventional {{
-            background-color: #E8EAF6;
-            color: #3949AB;
-        }}
-        .badge-regenerative {{
-            background-color: #DCEDC8;
-            color: #558B2F;
-        }}
-        
-        /* Header and hero section */
-        .hero-section {{
-            padding: 2rem 0;
-            text-align: center;
-            margin-bottom: 2rem;
-            background: linear-gradient(135deg, rgba(46,125,50,0.1) 0%, rgba(25,118,210,0.1) 100%);
-            border-radius: 10px;
-        }}
-        .hero-title {{
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, {colors["primary"]}, {colors["secondary"]});
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }}
-        .hero-subtitle {{
-            font-size: 1.2rem;
-            color: {colors["light_text"]};
-            max-width: 600px;
-            margin: 0 auto;
-        }}
-        
-        /* Navigation and sidebar */
-        .sidebar .sidebar-content {{
-            background-color: {colors["background"]};
-        }}
-        
-        /* Data displays */
-        .dataframe {{
-            border: none !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-radius: 5px;
-        }}
-        .dataframe th {{
-            background-color: {colors["primary"]};
-            color: white;
-            font-weight: 500;
-            text-align: left;
-            padding: 10px !important;
-        }}
-        .dataframe td {{
-            padding: 10px !important;
-            border-bottom: 1px solid #f0f0f0;
-        }}
-        .dataframe tr:nth-child(even) {{
-            background-color: #f8f8f8;
-        }}
-        
-        /* Season markers */
-        .season-marker {{
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }}
-        .spring-marker {{ background-color: #ABEBC6; }}
-        .summer-marker {{ background-color: #F8C471; }}
-        .fall-marker {{ background-color: #E59866; }}
-        .winter-marker {{ background-color: #85C1E9; }}
-        .year-round-marker {{ background-color: #BB8FCE; }}
-        
-        /* Custom buttons */
-        .stButton>button {{
-            background-color: {colors["primary"]};
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }}
-        .stButton>button:hover {{
-            background-color: {colors["secondary"]};
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }}
-        
-        /* Footer styling */
-        .footer {{
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            margin-top: 3rem;
-            text-align: center;
-        }}
-        .footer-text {{
-            color: {colors["light_text"]};
-            font-size: 0.9rem;
-        }}
-        .footer-highlight {{
-            color: {colors["primary"]};
-            font-weight: 500;
-        }}
+    /* Card styling */
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+    
+    /* Metric styling */
+    .metric-container {
+        text-align: center;
+        padding: 1rem;
+        background-color: #f1f8e9;
+        border-radius: 8px;
+        border-left: 5px solid #7cb342;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2e7d32;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        color: #616161;
+    }
+    
+    /* Table styling */
+    .dataframe {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .dataframe th {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        font-weight: bold;
+        text-align: left;
+        padding: 12px;
+    }
+    
+    .dataframe td {
+        padding: 10px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .dataframe tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    /* Footer styling */
+    .footer {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .footer-text {
+        color: #757575;
+        font-size: 0.8em;
+    }
+    
+    .footer-highlight {
+        font-weight: bold;
+        color: #2e7d32;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-def create_seasonal_calendar(products):
-    """Create a seasonal availability calendar for products"""
-    from datetime import datetime
-    import calendar
-    
-    now = datetime.now()
-    current_month = now.month
-    
-    # Define which products are available in each month
-    months = list(calendar.month_name)[1:]
-    product_seasons = {}
-    
-    for _, product in products.iterrows():
-        product_name = product['name']
-        seasons = product['season'].split('/')
-        
-        available_months = []
-        if 'Year-round' in seasons:
-            available_months = list(range(1, 13))
-        else:
-            if 'Spring' in seasons:
-                available_months.extend([3, 4, 5])
-            if 'Summer' in seasons:
-                available_months.extend([6, 7, 8])
-            if 'Fall' in seasons:
-                available_months.extend([9, 10, 11])
-            if 'Winter' in seasons:
-                available_months.extend([12, 1, 2])
-        
-        product_seasons[product_name] = available_months
-    
-    return product_seasons, current_month, months
+def create_metric_card(title, value, delta=None, delta_description="from previous period"):
+    """Create a styled metric card"""
+    with st.container():
+        st.markdown(f"""
+        <div class="card">
+            <div class="metric-container">
+                <div class="metric-label">{title}</div>
+                <div class="metric-value">{value}</div>
+                {f'<div style="color: {"green" if delta > 0 else "red"}; font-size: 0.9rem;">{delta:+.1f}% {delta_description}</div>' if delta is not None else ''}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-def get_placeholder_image(width=300, height=200):
-    """Generate a placeholder image for farms"""
-    # Create a placeholder farm image
-    fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
+def create_sales_chart(sales_data, products_data=None, by='month', chart_type='bar'):
+    """Create a sales chart by month or product"""
+    if by == 'month':
+        # Aggregate sales by month
+        monthly_sales = sales_data.groupby('month')['revenue'].sum().reset_index()
+        
+        # Define month order
+        month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        # Convert 'month' to categorical with the specified order
+        monthly_sales['month'] = pd.Categorical(monthly_sales['month'], categories=month_order, ordered=True)
+        
+        # Sort by the categorical month
+        monthly_sales = monthly_sales.sort_values('month')
+        
+        if chart_type == 'bar':
+            fig = px.bar(
+                monthly_sales, 
+                x='month', 
+                y='revenue',
+                title='Monthly Sales Revenue',
+                labels={'revenue': 'Revenue ($)', 'month': 'Month'},
+                color_discrete_sequence=['#2e7d32']
+            )
+        else:  # line chart
+            fig = px.line(
+                monthly_sales, 
+                x='month', 
+                y='revenue',
+                title='Monthly Sales Trend',
+                labels={'revenue': 'Revenue ($)', 'month': 'Month'},
+                markers=True,
+                color_discrete_sequence=['#2e7d32']
+            )
+            
+    elif by == 'product' and products_data is not None:
+        # Merge sales data with products to get product names
+        merged_data = sales_data.merge(products_data, left_on='product_id', right_on='id')
+        
+        # Aggregate sales by product
+        product_sales = merged_data.groupby('name')['revenue'].sum().reset_index()
+        
+        # Sort by revenue
+        product_sales = product_sales.sort_values('revenue', ascending=False)
+        
+        fig = px.bar(
+            product_sales, 
+            x='name', 
+            y='revenue',
+            title='Sales Revenue by Product',
+            labels={'revenue': 'Revenue ($)', 'name': 'Product'},
+            color_discrete_sequence=['#2e7d32']
+        )
+        fig.update_layout(xaxis_tickangle=-45)
+        
+    else:
+        st.error("Invalid chart parameters or missing product data")
+        return None
     
-    # Draw a simple farm scene
-    # Green field
-    ax.add_patch(plt.Rectangle((0, 0), 10, 4, color='#7CCC6F'))
-    # Blue sky
-    ax.add_patch(plt.Rectangle((0, 4), 10, 6, color='#87CEEB'))
-    # Farm house
-    ax.add_patch(plt.Rectangle((2, 2), 3, 2, color='#F5DEB3'))
-    ax.add_patch(plt.Polygon([(2, 4), (5, 4), (3.5, 5.5)], color='#8B4513'))
-    # Sun
-    ax.add_patch(plt.Circle((8, 8), 1, color='#FFD700'))
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        margin=dict(t=50, l=10, r=10, b=10),
+    )
     
-    ax.axis('off')
-    fig.tight_layout(pad=0)
-    
-    # Convert to image
-    buf = BytesIO()
-    fig.savefig(buf, format='png')
-    buf.seek(0)
-    img_str = base64.b64encode(buf.read()).decode()
-    plt.close(fig)
-    
-    return f"data:image/png;base64,{img_str}"
+    return fig
 
-def create_map_visualization(producers, user_location=None):
-    """Create an interactive map of producers"""
-    import folium
-    from folium.plugins import MarkerCluster, HeatMap
-    from
+def create_producer_map(producers_data):
+    """Create a simple map showing producer locations (placeholder)"""
+    # In a real app, you would use actual geocoded locations
+    # For this example, we'll create random coordinates
+    import numpy as np
+    np.random.seed(42)
+    
+    # Create random coordinates around a central location
+    central_lat, central_lon = 37.7749, -122.4194  # San Francisco coordinates
+    
+    # Add random coordinates to the producers DataFrame
+    map_data = producers_data.copy()
+    map_data['lat'] = central_lat + np.random.uniform(-0.5, 0.5, size=len(map_data))
+    map_data['lon'] = central_lon + np.random.uniform(-0.5, 0.5, size=len(map_data))
+    
+    # Use Streamlit's built-in map function
+    return map_data[['lat', 'lon', 'name', 'products']]
+
+def create_sustainability_chart(producers_data, products_data):
+    """Create a chart showing sustainability metrics"""
+    # Calculate percentage of sustainable producers
+    sustainable_count = producers_data['sustainable'].sum()
+    total_producers = len(producers_data)
+    sustainable_percentage = (sustainable_count / total_producers) * 100
+    
+    # Create a simple donut chart
+    fig = go.Figure(go.Pie(
+        labels=['Sustainable', 'Conventional'],
+        values=[sustainable_count, total_producers - sustainable_count],
+        hole=.4,
+        marker_colors=['#388e3c', '#bdbdbd']
+    ))
+    
+    fig.update_layout(
+        title_text='Producer Sustainability',
+        annotations=[dict(text=f"{sustainable_percentage:.1f}%", x=0.5, y=0.5, font_size=20, showarrow=False)]
+    )
+    
+    return fig
